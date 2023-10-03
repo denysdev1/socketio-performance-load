@@ -1,5 +1,37 @@
+require('dotenv').config();
+
 const os = require('os');
-const cpus = os.cpus();
+const io = require('socket.io-client');
+const options = {
+  auth: {
+    token: 'gjdfhgdfgil4h5394o85fsdvkljxfdsjlk',
+  },
+};
+const socket = io(process.env.SERVER_URL, options);
+
+socket.on('connect', () => {
+  const nI = os.networkInterfaces();
+  let macAddress;
+  for (const key in nI) {
+    const isInternetFacing = !nI[key][0].internal;
+
+    if (isInternetFacing) {
+      macAddress = nI[key][0].mac + Math.floor(Math.random() * 100000);
+      break;
+    }
+  }
+
+  const perfDataInterval = setInterval(async () => {
+    const perfData = await performanceLoadData();
+    perfData.macAddress = macAddress;
+
+    socket.emit('perfData', perfData);
+  }, 1000);
+
+  socket.on('disconnect', () => {
+    clearInterval(perfDataInterval);
+  });
+});
 
 const cpuAverage = () => {
   const cpus = os.cpus();
@@ -36,6 +68,7 @@ const getCpuLoad = () =>
 
 const performanceLoadData = () =>
   new Promise(async (resolve, reject) => {
+    const cpus = os.cpus();
     const totalMem = os.totalmem();
     const freeMem = os.freemem();
     const usedMem = totalMem - freeMem;
@@ -60,10 +93,3 @@ const performanceLoadData = () =>
       cpuLoad,
     });
   });
-
-// const run = async () => {
-//   const data = await performanceLoadData();
-//   console.log(data);
-// }
-
-// run();
