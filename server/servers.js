@@ -1,48 +1,60 @@
 require('dotenv').config();
 
-const cluster = require('cluster');
+// const cluster = require('cluster');
 const http = require('http');
 const { Server } = require('socket.io');
-const numCPUs = require('os').cpus().length;
-const { setupMaster, setupWorker } = require('@socket.io/sticky');
-const { createAdapter, setupPrimary } = require('@socket.io/cluster-adapter');
+// const numCPUs = require('os').cpus().length;
+// const { setupMaster, setupWorker } = require('@socket.io/sticky');
+// const { createAdapter, setupPrimary } = require('@socket.io/cluster-adapter');
 const socketMain = require('./socketMain');
 const PORT = process.env.SERVER_PORT;
 
-if (cluster.isMaster) {
-  console.log(`Master ${process.pid} is running`);
+// if (cluster.isMaster) {
+//   console.log(`Master ${process.pid} is running`);
 
-  const httpServer = http.createServer();
+//   const httpServer = http.createServer();
 
-  setupMaster(httpServer, {
-    loadBalancingMethod: 'least-connection',
-  });
+//   setupMaster(httpServer, {
+//     loadBalancingMethod: 'least-connection',
+//   });
 
-  setupPrimary();
+//   setupPrimary();
 
-  httpServer.listen(PORT || 3000);
+//   httpServer.listen(PORT || 3000);
 
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
+//   for (let i = 0; i < numCPUs; i++) {
+//     cluster.fork();
+//   }
 
-  cluster.on('exit', (worker) => {
-    console.log(`Worker ${worker.process.pid} died`);
-    cluster.fork();
-  });
-} else {
-  console.log(`Worker ${process.pid} started`);
+//   cluster.on('exit', (worker) => {
+//     console.log(`Worker ${worker.process.pid} died`);
+//     cluster.fork();
+//   });
+// } else {
+//   console.log(`Worker ${process.pid} started`);
 
-  const httpServer = http.createServer();
-  const io = new Server(httpServer, {
-    cors: {
-      origin: process.env.CLIENT_URL,
-      credentials: true,
-    },
-  });
+//   const httpServer = http.createServer();
+//   const io = new Server(httpServer, {
+//     cors: {
+//       origin: process.env.CLIENT_URL,
+//       credentials: true,
+//     },
+//   });
 
-  io.adapter(createAdapter());
+//   io.adapter(createAdapter());
 
-  setupWorker(io);
-  socketMain(io, process.pid);
-}
+//   setupWorker(io);
+//   socketMain(io, process.pid);
+// }
+
+const httpServer = http.createServer();
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  },
+});
+
+io.listen(PORT)
+
+socketMain(io, process.pid);
